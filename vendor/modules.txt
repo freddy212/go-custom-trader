@@ -1,0 +1,6 @@
+# github.com/freddy212/go-coinbasepro v0.0.0-20210403133242-e319978e7405
+## explicit
+github.com/freddy212/go-coinbasepro
+# github.com/gorilla/websocket v1.4.2
+## explicit
+github.com/gorilla/websocket
