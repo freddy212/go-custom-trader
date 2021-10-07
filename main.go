@@ -8,7 +8,7 @@ import (
 
 func main() {
 	var listenedCurrencies = []string{
-		"ALGO-EUR",
+		"ADA-EUR",
 	}
 	var decimalsToSell = []string{"1"}
 
@@ -25,7 +25,7 @@ func main() {
 			start = time.Now()
 			index += 1
 		}
-		if index > 4 {
+		if index > len(decimalsToSell)-1 {
 			{
 				<-wait
 				println("not looping")

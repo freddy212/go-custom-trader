@@ -8,14 +8,13 @@ import (
 )
 
 func Sell(coin string, productId string, client *coinbasepro.Client, decimalToSell string, price float64, tradeHistory *TradeHistory) {
-	tradeHistory.SellStreak = min(tradeHistory.SellStreak+1, 3)
+	tradeHistory.SellStreak = min(tradeHistory.SellStreak+1, 8)
 	priceAt := findIndex(tradeHistory.TradePrices, price)
 	sellMultipler := getSellMultiplier(len(tradeHistory.TradePrices), priceAt)
 
-	sellPercent := 5 * sellMultipler * float64(tradeHistory.SellStreak)
+	sellPercent := 10 * sellMultipler * (0.5 + float64(tradeHistory.SellStreak)/2)
 
-	accounts, _ := client.GetAccounts()
-	sellAmount := SellTotal(accounts, coin) / 100 * sellPercent
+	sellAmount := tradeHistory.sellTotal / 100 * sellPercent
 	println("Attempting to sell " + coin)
 	println("decimal to sell is :" + decimalToSell)
 	println("amount to sell is :", fmt.Sprintf("%."+decimalToSell+"f", sellAmount))
@@ -37,17 +36,17 @@ func Sell(coin string, productId string, client *coinbasepro.Client, decimalToSe
 	tradeHistory.BuyStreak = 0
 }
 func Buy(productId string, client *coinbasepro.Client, price float64, tradeHistory *TradeHistory) {
-	tradeHistory.BuyStreak = min(tradeHistory.BuyStreak+1, 3)
+	tradeHistory.BuyStreak = min(tradeHistory.BuyStreak+1, 8)
 	priceAt := findIndex(tradeHistory.TradePrices, price)
 	buyMultipler := getBuyMultiplier(len(tradeHistory.TradePrices), priceAt)
-	accounts, _ := client.GetAccounts()
 
-	buyPercent := 10 * buyMultipler * float64(tradeHistory.BuyStreak)
-	buyAmount := BuyTotal(accounts, "EUR") / 100 * buyPercent
+	buyPercent := 10 * buyMultipler * (0.5 + float64(tradeHistory.BuyStreak)/2)
+	buyAmount := tradeHistory.buyTotal / 100 * buyPercent
 
 	println("Attempting to buy " + productId)
+	println("Amount to buy is ", buyAmount)
 	println("BuyStreak is ", tradeHistory.BuyStreak)
-	println("BellMultiplier is ", buyMultipler)
+	println("BuyMultiplier is ", buyMultipler)
 
 	order := coinbasepro.Order{
 		Type:      "market",

@@ -24,6 +24,8 @@ type TradeHistory struct {
 	TradePrices []float64
 	SellStreak  int
 	BuyStreak   int
+	buyTotal    float64
+	sellTotal   float64
 }
 
 func StartSocket(productId string, decimalCount string) {
@@ -33,6 +35,8 @@ func StartSocket(productId string, decimalCount string) {
 	if err != nil {
 		println(err.Error())
 	}
+
+	coinName := strings.Split(productId, "-")[0]
 
 	subscribe := coinbasepro.Message{
 		Type: "subscribe",
@@ -53,6 +57,10 @@ func StartSocket(productId string, decimalCount string) {
 	client := GetClientInstance()
 	var counter Counter
 	var tradeHistory TradeHistory
+	accounts, _ := client.GetAccounts()
+	tradeHistory.buyTotal = BuyTotal(accounts, "EUR")
+
+	println("buy total is :", tradeHistory.buyTotal)
 	counter.DecimalToSell = decimalCount
 	println("started listening for: " + productId)
 	println("decimal to sell is : " + counter.DecimalToSell)
@@ -68,7 +76,6 @@ func StartSocket(productId string, decimalCount string) {
 		}
 		if message.Type == "ticker" {
 			price, _ := strconv.ParseFloat(message.Price, 64)
-			coinName := strings.Split(message.ProductID, "-")[0]
 			analyzePrice(&counter, price, client, coinName, message.ProductID, &tradeHistory)
 		}
 	}
@@ -78,22 +85,21 @@ func analyzePrice(counter *Counter, price float64, client *coinbasepro.Client, c
 	counter.TickCount++
 
 	if counter.TickCount > 1 {
-		counter.Angle += price - counter.PreviousPrice
-
-		counter.AngleTick = append(counter.AngleTick, price-counter.PreviousPrice)
+		counter.Angle += (price - counter.PreviousPrice)
+		counter.AngleTick = append(counter.AngleTick, (price - counter.PreviousPrice))
 	}
-	if counter.TickCount%200 == 0 && counter.Average == 0.0 {
-		counter.Average = counter.PriceTotal / 200
+	if counter.TickCount%50 == 0 && counter.Average == 0.0 {
+		counter.Average = counter.PriceTotal / 50
 		counter.PriceTotal = 0.0
 		println("average is ", counter.Average)
 		println("for coin " + coinName)
 	}
-	if counter.TickCount%100 == 0 {
+	if counter.TickCount%30 == 0 {
 		println("tick for coin ", coinName)
 		println("price is", price)
 		println("angle is", counter.Angle)
 	}
-	if counter.TickCount > 61 {
+	if counter.TickCount > 151 {
 		counter.Angle -= counter.AngleTick[0]
 		//counter.AngleTick = append(counter.AngleTick[:0], counter.AngleTick[1:]...)
 		counter.AngleTick = counter.AngleTick[1:]
@@ -103,12 +109,16 @@ func analyzePrice(counter *Counter, price float64, client *coinbasepro.Client, c
 		if price > UpperBound(counter.Average) && counter.Angle < 0 {
 			println("average before sell : %e", counter.Average)
 			println("price is: ", price)
+			tradeHistory.sellTotal = 50 / price
+			println("sell total for coin ", coinName)
+			println("is", tradeHistory.sellTotal)
+
 			Sell(coinName, productId, client, counter.DecimalToSell, price, tradeHistory)
 			counter.Average = price
 			counter.Angle = 0
 			counter.PriceTotal = 0.0
 			counter.TickCount = 0
-			counter.AngleTick = counter.AngleTick[0:]
+			counter.AngleTick = nil
 
 		}
 		if price < LowerBound(counter.Average) && counter.Angle > 0 {
@@ -119,14 +129,14 @@ func analyzePrice(counter *Counter, price float64, client *coinbasepro.Client, c
 			counter.Angle = 0.0
 			counter.PriceTotal = 0.0
 			counter.TickCount = 0
-			counter.AngleTick = counter.AngleTick[0:]
+			counter.AngleTick = nil
 		}
 	}
 }
 
 func UpperBound(num float64) float64 {
-	return num / 100 * 101.5
+	return num / 100 * 102.5
 }
 func LowerBound(num float64) float64 {
-	return num / 100 * 98.5
+	return num / 100 * 97.5
 }

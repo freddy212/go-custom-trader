@@ -17,18 +17,10 @@ func GetCurrencyPrice(accounts []coinbasepro.Account, currency string) float64 {
 }
 
 var buyTotal float64 = 0.0
-var sellTotal float64 = 0.0
 
 func BuyTotal(accounts []coinbasepro.Account, currency string) float64 {
 	if buyTotal == 0.0 {
-		buyTotal = GetCurrencyPrice(accounts, currency)
+		buyTotal = 50
 	}
 	return buyTotal
-}
-
-func SellTotal(accounts []coinbasepro.Account, currency string) float64 {
-	if sellTotal == 0.0 {
-		sellTotal = GetCurrencyPrice(accounts, currency)
-	}
-	return sellTotal
 }
